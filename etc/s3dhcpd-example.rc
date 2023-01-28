@@ -1,0 +1,70 @@
+# s3dhcpd configuration file
+
+global-server-addr = 10.20.0.10
+global-server-netmask = 255.255.255.0
+
+global-domain-name = hotrixit.com
+global-nameserver1 = 10.20.0.10
+global-nameserver2 = 8.8.8.8
+global-lease-time = 180
+global-renew-time = 60
+global-authoritative = Yes
+
+# Workaround for some MSFT clients
+# Turn it off if you need to run more than
+# one instance s3dhcpd per host
+global-bind-to-address = Yes
+
+# Support for radius accounting,
+# TODO: support hostname for a radius server
+radius-enabled = Yes
+radius-server-addr = 127.0.0.1
+radius-server-port = 1813
+radius-auth-salt = 123qwe
+
+# Support for landing page with BSD pf
+# add to pf.conf:
+# table <admitted> persist
+# rdr pass on $int_if proto tcp from ! <admitted> to any -> $landing_ip
+
+pf-enabled = Yes
+pf-device = /dev/pf
+pf-default-table = admitted
+
+# Set logging parameters, log level set per component
+# log levels: 1 error, 2 warning, 3 info, 4 debug, 5 dump packets
+log-filename=/var/log/s3dhcpd.log
+log-dhcp = 99 
+log-alloc = 4
+log-init = 4
+log-radius = 99
+
+# sqlite3 database to store leases
+database-leases=/var/db/s3dhcpd/s3dhcpd_leases.sqlite3
+
+# sqlite3 database to obtain static ip addresses it could be your custom one
+database-static=/var/db/s3dhcpd/s3dhcpd_static.sqlite3
+database-static-query={select ip, inet_access from dhcp_asmt where mac=? collate nocase}
+
+# Subnet declarations
+# TODO: Support per-subnet lease-time and renew-time
+
+# Subnet for static allocations only, no range
+subnet-mysubnet0-addr = 10.20.0.0
+subnet-mysubnet0-netmask = 255.255.255.0
+subnet-mysubnet0-gateway = 10.20.0.10
+
+# Subnet for dynamic allocations
+subnet-mysubnet1-addr = 10.20.11.0
+subnet-mysubnet1-netmask = 255.255.255.0
+subnet-mysubnet1-gateway = 10.20.11.10
+subnet-mysubnet1-nameserver1 = 10.20.11.10
+subnet-mysubnet1-nameserver2 = $(global-nameserver1)
+subnet-mysubnet1-range-start = 10.20.11.50
+subnet-mysubnet1-range-end = 10.20.11.60
+
+# We can put some static assignment right here
+# it has a prcedence over database
+# TODO: allow lowercase letters in MAC
+host-08:11:96:BE:8B:C4 = 10.20.11.33
+host-08:11:96:BE:8B:C4-inet = Yes

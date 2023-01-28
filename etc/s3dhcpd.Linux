@@ -1,0 +1,10 @@
+#!/sbin/runscript
+
+interface=`echo $0 | /usr/bin/sed -e 's/.*s3dhcpd_//' -e 's/\.*$//'`
+command="/opt/s3kit/sbin/s3dhcpd"
+command_args="-d -i ${interface}"
+pidfile="/var/run/${SVCNAME}_${interface}.pid"
+
+depend() {
+	use net
+}

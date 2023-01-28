@@ -1,0 +1,42 @@
+# s3dhcpd configuration file
+
+global-server-addr = 10.20.0.10
+global-server-netmask = 255.255.255.0
+
+global-domain-name = "sokpb"
+global-nameserver1 = 10.20.0.10
+global-nameserver2 = 8.8.8.8
+global-lease-time = 10
+global-renew-time = 5 
+global-authoritative = Yes
+
+# Set logging parameters, log level set per component
+# log levels: 1 error, 2 warning, 3 info, 4 debug, 5 dump packets
+log-filename=cerr
+log-dhcp = 4
+log-alloc = 4
+
+# sqlite3 database to store leases
+database-leases=s3dhcpd_leases.sqlite3
+
+# sqlite3 database to obtain static ip addresses it could be your custom one
+database-static=s3dhcpd_static.sqlite3
+database-static-query={select ip from dhcp_asmt where mac=?}
+
+# Subnet declarations
+# TODO: Support per-subnet lease-time and renew-time
+
+# Subnet for static allocations only, no range
+subnet-mysubnet0-addr = 10.20.0.0
+subnet-mysubnet0-netmask = 255.255.255.0
+subnet-mysubnet0-gateway = 10.20.0.10
+
+# Subnet for dynamic allocations
+subnet-mysubnet1-addr = 10.20.11.0
+subnet-mysubnet1-netmask = 255.255.255.0
+subnet-mysubnet1-gateway = 10.20.11.10
+subnet-mysubnet1-nameserver1 = 10.20.11.10
+subnet-mysubnet1-nameserver2 = $(global-nameserver1)
+subnet-mysubnet1-range-start = 10.20.11.50
+subnet-mysubnet1-range-end = 10.20.11.60
+

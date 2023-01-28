@@ -1,0 +1,81 @@
+#! /bin/sh
+
+# PROVIDE: dhcpd
+# REQUIRE: NETWORKING FILESYSTEMS
+# KEYWORD: shutdown
+#
+# Add the following line to /etc/rc.conf to enable dhcpd:
+#
+# s3dhcpd_em0_enable="YES"
+# and create a symlink s3dhcpd -> s3dhcpd_em0
+#
+
+. /etc/rc.subr
+
+name=s3dhcpd
+command_path=/opt/sbin
+config_path=/opt/etc
+pidfile_path=/var/run
+
+start_cmd="${name}_start"
+stop_cmd="${name}_stop"
+status_cmd="${name}_status"
+start_precmd="${name}_prestart"
+
+command="$command_path/$name"
+
+getiflist() {
+  set | /usr/bin/sed -n -e "/${name}_.*[Yy][Ee][Ss]/ s/${name}_\(.*\)_enable.*/\1/p"
+}
+
+s3dhcpd_prestart() {
+  # Disable default rc.conf _enable=Yes|No check
+  return 0
+}
+
+s3dhcpd_start() {
+  local _flags
+
+  for i in $(getiflist)
+  do
+    _flags=`eval "echo \\$${name}_${i}_flags"`
+    if [ "x$_flags" = "x" ]
+    then
+      _flags="-d -i $i -c ${config_path}/${name}_${i}.rc"
+    fi
+    eval "${command} ${_flags}"
+  done
+}
+
+s3dhcpd_stop() {
+  local _pidfile
+  local _pid
+
+  for i in $(getiflist)
+  do
+    _pidfile="${pidfile_path}/${name}_${i}.pid"
+    _pid=$(check_pidfile ${_pidfile} ${command})
+    kill ${sig_stop} ${_pid}
+    wait_for_pids ${_pid}
+  done
+}
+
+s3dhcpd_status() {
+  local _pid
+  local _pidfile
+
+  for i in $(getiflist)
+  do
+    _pidfile="${pidfile_path}/${name}_${i}.pid"
+    _pid=$(check_pidfile ${_pidfile} ${command})
+    if [ "x${_pid}" != "x" ]
+    then
+      echo ${name} ${i} ${_pid}
+    else
+      echo ${name} ${i} is not running
+    fi
+  done
+}
+
+load_rc_config ${name}
+run_rc_command "$1"
